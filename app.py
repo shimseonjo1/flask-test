@@ -1,5 +1,9 @@
+from copyreg import pickle
 from flask import Flask,render_template, request, redirect
-import os
+import os,pickle
+from PIL import Image
+import numpy as np
+
 
 app = Flask(__name__)
 
@@ -39,6 +43,27 @@ def upload():
         print(path)
         f.save(path)
         return redirect('/')
+
+@app.route('/mnist',methods=['GET','POST'])
+def mnist():
+    if request.method =='GET':
+        return render_template('mnistform.html')
+    else:
+        f= request.files['filename']
+        path = os.path.dirname(__file__)+'/static/upload/'+ f.filename
+        print(path)
+        f.save(path)
+        img = Image.open(path).convert('L')
+        img = np.resize(img,(1,784))
+        img = 255-(img)
+        path = 'static/upload/'+ f.filename
+        modelpath = 'model.data'
+        f = open(modelpath,'rb') 
+        model = pickle.load(f)
+        pred = model.predict(img)
+        print(pred)
+        return render_template('mnistresult.html',data=[pred[0],path])
+
 
 
 if __name__ == '__main__':
